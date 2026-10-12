@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Личный планер</title>
+  <meta name="theme-color" content="#0b0b0a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Планер">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230b0b0a'/%3E%3Ctext x='50' y='68' font-family='Georgia,serif' font-size='58' fill='%23ffffff' text-anchor='middle'%3EП%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ВХОД -->
+  <div id="login-view" class="login" hidden>
+    <div class="eyebrow">Personal</div>
+    <div class="crest">П</div>
+    <div class="logo">Планер</div>
+    <div class="rule"></div>
+    <input id="authEmail" class="input" type="email" placeholder="Email" autocomplete="email">
+    <input id="authPass" class="input" type="password" placeholder="Пароль" autocomplete="current-password">
+    <button class="btn btn-primary full" id="btnLogin">Войти</button>
+    <button class="btn full" id="btnSignup">Создать аккаунт</button>
+    <div id="authMsg" class="auth-msg"></div>
+    <button class="btn btn-sm full ghost" id="btnLocal">Работать без входа</button>
+  </div>
+
+  <!-- ПРИЛОЖЕНИЕ -->
+  <div id="app" class="container" hidden>
+    <header class="header">
+      <div class="brand"><h1>Планер</h1><span id="modeLabel">Личный</span></div>
+      <div class="actions">
+        <span class="sync" id="syncState"><i class="dot"></i><b>готово</b></span>
+        <button class="btn btn-sm" id="themeBtn">Тема</button>
+        <button class="btn btn-sm" id="logoutBtn">Выйти</button>
+      </div>
+    </header>
+
+    <nav class="switch" id="tabs">
+      <button data-tab="cal" class="active"><svg viewBox="0 0 24 24"><path d="M7 2v3M17 2v3M3 8h18M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg><span>Календарь</span></button>
+      <button data-tab="week"><svg viewBox="0 0 24 24"><path d="M3 5h18M3 12h18M3 19h18"/></svg><span>Неделя</span></button>
+      <button data-tab="tasks"><svg viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12M3 6l1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17"/></svg><span>Задачи</span></button>
+    </nav>
+
+    <!-- КАЛЕНДАРЬ -->
+    <section id="v-cal" class="view">
+      <div class="cal-header">
+        <div class="cal-title" id="calTitle"></div>
+        <div class="cal-nav">
+          <button class="cal-btn" id="calPrev" aria-label="Назад">←</button>
+          <button class="cal-btn" id="calToday">Сегодня</button>
+          <button class="cal-btn" id="calNext" aria-label="Вперёд">→</button>
+        </div>
+      </div>
+      <div class="legend"><span><i class="sw study"></i>Учёба</span><span><i class="sw work"></i>Работа</span><span><i class="sw other"></i>Другое</span><span><i class="sw tk"></i>Задачи</span></div>
+      <div class="cal-grid" id="calGrid"></div>
+    </section>
+
+    <!-- НЕДЕЛЯ -->
+    <section id="v-week" class="view" hidden>
+      <div class="cal-header">
+        <div class="cal-title">График недели</div>
+        <div class="cal-nav">
+          <div class="seg" id="weekMode"><button data-m="list">Списком</button><button data-m="table">Таблица</button></div>
+          <button class="btn btn-sm btn-primary" id="addBlockBtn">+ Блок</button>
+        </div>
+      </div>
+      <div id="weekList" class="wlist"></div>
+      <div class="grid-wrap" id="gridWrap"><table id="grid" class="grid"></table></div>
+    </section>
+
+    <!-- ЗАДАЧИ -->
+    <section id="v-tasks" class="view" hidden>
+      <div class="cal-header"><div class="cal-title">Задачи</div></div>
+      <div class="tasks-layout">
+        <aside class="lists">
+          <div class="chips-row">
+            <button class="list-item" data-list="today"><span>Сегодня</span><em id="cntToday">0</em></button>
+            <button class="list-item" data-list="all"><span>Все</span><em id="cntAll">0</em></button>
+            <span id="listsBox" class="lists-box"></span>
+          </div>
+          <form id="newListForm" class="newlist"><input class="input" id="newListName" placeholder="+ Новый список" maxlength="40"></form>
+        </aside>
+        <div class="tasks">
+          <div class="tasks-head"><h3 id="listTitle"></h3><span id="listTools"></span></div>
+          <form id="newTaskForm" class="newtask">
+            <input class="input" id="newTaskText" placeholder="Новая задача" maxlength="200" autocomplete="off" enterkeyhint="done">
+            <input class="input" id="newTaskDate" type="date" aria-label="Дата">
+            <button class="btn btn-primary" type="submit">Добавить</button>
+          </form>
+          <div id="taskBox"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ДЕНЬ -->
+  <div class="overlay" id="dayModal" hidden>
+    <div class="modal wide sheet">
+      <span class="close" data-close>&times;</span>
+      <div class="day-head">
+        <button class="cal-btn" id="dayPrev" aria-label="Предыдущий день">←</button>
+        <div><h3 id="dayTitle"></h3><div class="day-sub" id="daySub"></div></div>
+        <button class="cal-btn" id="dayNext" aria-label="Следующий день">→</button>
+      </div>
+      <div class="sub">Расписание</div>
+      <div id="dayBlocks"></div>
+      <button class="btn btn-sm" id="dayAddBlock">+ Блок в этот день</button>
+      <div class="sub">Задачи</div>
+      <div id="dayTasks"></div>
+      <form id="dayTaskForm" class="newtask two">
+        <input class="input" id="dayTaskText" placeholder="Задача на этот день" autocomplete="off" enterkeyhint="done">
+        <button class="btn btn-primary" type="submit">Добавить</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- БЛОК -->
+  <div class="overlay top" id="blockModal" hidden>
+    <form class="modal sheet" id="blockForm">
+      <span class="close" data-close>&times;</span>
+      <h3 id="blockModalTitle">Новый блок</h3>
+      <label>Название<input class="input" id="bTitle" maxlength="60" placeholder="Например: ОКЗИ, Работа, Спортзал"></label>
+      <div class="field"><span class="lbl">Тип</span><div class="kinds" id="bKinds"></div></div>
+      <div class="field"><span class="lbl">Дни · каждую неделю</span><div class="days" id="bDays"></div></div>
+      <div class="row2">
+        <label>С<select class="input" id="bFrom"></select></label>
+        <label>До<select class="input" id="bTo"></select></label>
+      </div>
+      <div id="bErr" class="err"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="bDelete">Удалить</button>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
