@@ -479,6 +479,25 @@ window.PLANNER_CONFIG = {
     del(kind, id) { cacheSave(); return cloud(() => sb.from(TBL[kind]).delete().eq('id', id)); },
     settings() { cacheSave(); return cloud(() => sb.from('planner_settings').upsert({ user_id: user.id, top: S.settings.top, pairs: S.settings.pairs })); }
   };
+  // убирает точные копии (остались от двойной первой заливки) и чистит их в базе
+  function dedupe() {
+    const delB = [], delT = [], delL = [], moved = [];
+    const seenB = new Map(); S.blocks = S.blocks.filter(b => { const k = [b.day, b.start_col, b.end_col, b.title, b.kind].join('|'); if (seenB.has(k)) { delB.push(b.id); return false; } seenB.set(k, 1); return true; });
+    const keep = new Map(), remap = new Map();
+    S.lists = S.lists.filter(l => { const k = l.name.trim().toLowerCase(); if (keep.has(k)) { remap.set(l.id, keep.get(k)); delL.push(l.id); return false; } keep.set(k, l.id); return true; });
+    S.tasks.forEach(t => { if (remap.has(t.list_id)) { t.list_id = remap.get(t.list_id); moved.push(t); } });
+    const seenT = new Map(); S.tasks = S.tasks.filter(t => { const k = [t.list_id, t.text, t.due || '', t.done].join('|'); if (seenT.has(k)) { delT.push(t.id); return false; } seenT.set(k, 1); return true; });
+    return { delB, delT, delL, moved };
+  }
+  async function cleanup(d) {
+    if (!d.delB.length && !d.delT.length && !d.delL.length) return;
+    cacheSave();
+    if (mode !== 'cloud') return;
+    await persist.saveMany('tasks', d.moved.filter(t => !d.delT.includes(t.id)));
+    for (const id of d.delT) await persist.del('tasks', id);
+    for (const id of d.delB) await persist.del('blocks', id);
+    for (const id of d.delL) await persist.del('lists', id);
+  }
   async function loadAll() {
     if (mode === 'cloud') {
       setSync('busy', 'загрузка');
@@ -491,6 +510,7 @@ window.PLANNER_CONFIG = {
         S.blocks = b.data; S.lists = l.data; S.tasks = t.data;
         S.settings = st.data ? { top: st.data.top || DEFAULT_SETTINGS.top, pairs: st.data.pairs || DEFAULT_SETTINGS.pairs } : structuredClone(DEFAULT_SETTINGS);
         if (!b.data.length && !l.data.length && !st.data) await seedFresh();
+        else await cleanup(dedupe());
         setSync('', 'синхронизировано'); cacheSave(); return;
       } catch (e) {
         console.error(e); setSync('err', 'офлайн');
@@ -499,16 +519,23 @@ window.PLANNER_CONFIG = {
       }
     }
     const c = cacheLoad();
-    if (c) Object.assign(S, c); else await seedFresh();
+    if (c) { Object.assign(S, c); await cleanup(dedupe()); } else await seedFresh();
     setSync('', 'локально');
   }
+  // одинаковый id при каждом запуске → повторная заливка не плодит дубли
+  function detId(key) {
+    const str = (user ? user.id : 'local') + ':' + key; let h = [0x9e3779b9, 0x243f6a88, 0xb7e15162, 0xdeadbeef];
+    for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); for (let j = 0; j < 4; j++) { h[j] = Math.imul(h[j] ^ (c + j * 31), 2654435761); h[j] ^= h[j] >>> 15; } }
+    const x = h.map(n => (n >>> 0).toString(16).padStart(8, '0')).join('');
+    return `${x.slice(0, 8)}-${x.slice(8, 12)}-5${x.slice(13, 16)}-a${x.slice(17, 20)}-${x.slice(20, 32)}`;
+  }
   async function seedFresh() {
-    S.blocks = SEED.map(([day, s, e, title, kind]) => ({ id: uid(), day, start_col: s, end_col: e, title, kind }));
-    const inbox = { id: uid(), name: 'Входящие', position: 0 }, study = { id: uid(), name: 'Учёба', position: 1 };
+    S.blocks = SEED.map(([day, s, e, title, kind], i) => ({ id: detId('seed-block-' + i), day, start_col: s, end_col: e, title, kind }));
+    const inbox = { id: detId('seed-list-inbox'), name: 'Входящие', position: 0 }, study = { id: detId('seed-list-study'), name: 'Учёба', position: 1 };
     S.lists = [inbox, study];
     S.tasks = [
-      { id: uid(), list_id: study.id, text: 'Подготовиться к лекции', done: false, due: todayStr(), position: 0 },
-      { id: uid(), list_id: inbox.id, text: 'Нажмите на текст, чтобы изменить', done: false, due: null, position: 0 }
+      { id: detId('seed-task-1'), list_id: study.id, text: 'Подготовиться к лекции', done: false, due: todayStr(), position: 0 },
+      { id: detId('seed-task-2'), list_id: inbox.id, text: 'Нажмите на текст, чтобы изменить', done: false, due: null, position: 0 }
     ];
     S.settings = structuredClone(DEFAULT_SETTINGS); cacheSave();
     if (mode === 'cloud') { await persist.saveMany('blocks', S.blocks); await persist.saveMany('lists', S.lists); await persist.saveMany('tasks', S.tasks); await persist.settings(); }
@@ -778,6 +805,7 @@ window.PLANNER_CONFIG = {
   $('.lists').addEventListener('click', e => { const b = e.target.closest('.list-item'); if (b) { S.view = b.dataset.list; renderLists(); renderTasks(); } });
   $('#newListForm').addEventListener('submit', e => {
     e.preventDefault(); const v = $('#newListName').value.trim(); if (!v) return;
+    const same = S.lists.find(x => x.name.trim().toLowerCase() === v.toLowerCase()); if (same) { S.view = same.id; $('#newListName').value = ''; renderLists(); renderTasks(); return; }
     const l = { id: uid(), name: v, position: S.lists.length }; S.lists.push(l); persist.save('lists', l); S.view = l.id; $('#newListName').value = ''; renderLists(); renderTasks();
   });
   $('#listTools').addEventListener('click', e => {
@@ -794,11 +822,13 @@ window.PLANNER_CONFIG = {
   $('#themeBtn').addEventListener('click', () => { const t = document.body.classList.contains('light') ? 'dark' : 'light'; applyTheme(t); store.set('planner_theme', t); });
 
   /* ---------- вход / запуск ---------- */
+  let starting = false;
   async function startApp() {
+    if (starting) return; starting = true;
     $('#login-view').hidden = true; $('#app').hidden = false;
     $('#modeLabel').textContent = mode === 'cloud' ? (user.email || 'Личный') : 'Личный';
     $('#logoutBtn').hidden = mode === 'local';
-    await loadAll(); setTab(S.tab); renderAll();
+    try { await loadAll(); } finally { starting = false; } setTab(S.tab); renderAll();
   }
   function showLogin() { $('#app').hidden = true; $('#login-view').hidden = false; }
   async function authAction(kind) {
