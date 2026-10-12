@@ -13,7 +13,276 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <style>
+:root{
+  --bg:#0b0b0a; --card:#151513; --text:#f2f0ea; --muted:#8f8a7c; --border:#2b2924;
+  --hover:#1d1c19; --gold:#d8d8d4; --error:#b5544a; --ok:#6b8f5e; --today:rgba(255,255,255,.12);
+  --display:'Cormorant Garamond',Georgia,serif; --main:'Inter',system-ui,sans-serif;
+  --study-bg:#9b3a34; --study-fg:#f6dfa4;
+  --work-bg:#d9bd6b; --work-fg:#4a1713;
+  --other-bg:#34322d; --other-fg:#f2f0ea;
+  --task:#8fb08a;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+body.light{
+  --bg:#f7f6f2; --card:#fff; --text:#16150f; --muted:#6b6558; --border:#e2ddd0; --hover:#efece2; --gold:#16150f; --today:rgba(0,0,0,.07);
+  --other-bg:#e4dfd2; --other-fg:#16150f; --task:#4f7a49;
+}
+*{margin:0;padding:0;box-sizing:border-box;outline:none;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--main);line-height:1.5;min-height:100vh;
+  background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.014) 0 1px,transparent 1px 46px);transition:background-color .3s,color .3s}
+body.light{background-image:repeating-linear-gradient(115deg,rgba(0,0,0,.012) 0 1px,transparent 1px 46px)}
+.container{max-width:1280px;margin:0 auto;padding:32px 20px 80px}
+
+/* header */
+.header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:20px;margin-bottom:22px;gap:12px}
+.brand h1{font-family:var(--display);font-weight:500;font-size:26px;letter-spacing:6px;text-transform:uppercase}
+.brand span{display:block;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-top:2px;max-width:50vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.actions{display:flex;gap:10px;align-items:center}
+.sync{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
+.sync .dot{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.sync.busy .dot{background:var(--gold);animation:pulse 1s infinite}
+.sync.err .dot{background:var(--error)}
+@keyframes pulse{50%{opacity:.25}}
+
+/* controls */
+.input{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);padding:12px 14px;font:inherit;font-size:16px;border-radius:2px;transition:border-color .2s;min-width:0}
+.input:focus{border-color:var(--gold)}
+.input::placeholder{color:var(--muted)}
+select.input{appearance:none;cursor:pointer}
+input[type=date]{color-scheme:dark}
+body.light input[type=date]{color-scheme:light}
+.btn{background:transparent;color:var(--text);border:1px solid var(--text);padding:11px 18px;cursor:pointer;font:500 12px var(--main);text-transform:uppercase;letter-spacing:2px;border-radius:2px;transition:.2s;user-select:none;white-space:nowrap}
+.btn:hover{background:var(--text);color:var(--bg)}
+.btn:active{transform:translateY(1px)}
+.btn-sm{padding:7px 12px;font-size:11px}
+.btn-primary{background:var(--gold);color:#111;border-color:var(--gold);font-weight:600}
+body.light .btn-primary{color:#f7f6f2}
+.btn-primary:hover{background:var(--text);border-color:var(--text);color:var(--bg)}
+.btn-danger{border-color:var(--error);color:var(--error)}
+.btn-danger:hover{background:var(--error);color:#fff;border-color:var(--error)}
+.btn.ghost{opacity:.7;border-color:var(--border)}
+.full{width:100%;margin-top:10px}
+
+/* tabs */
+.switch{display:inline-flex;border:1px solid var(--text);margin-bottom:22px;border-radius:2px;overflow:hidden}
+.switch button{background:none;border:none;color:var(--text);font:600 11px var(--main);letter-spacing:2px;text-transform:uppercase;padding:9px 18px;cursor:pointer;display:flex;align-items:center;gap:8px;border-right:1px solid var(--text)}
+.switch button:last-child{border-right:none}
+.switch button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:none}
+.switch button.active{background:var(--text);color:var(--bg)}
+.view{animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* calendar header */
+.cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:16px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap}
+.cal-title{font-family:var(--display);font-weight:500;font-size:28px;text-transform:uppercase;letter-spacing:3px}
+.cal-nav{display:flex;gap:8px;align-items:center}
+.cal-btn{background:transparent;color:var(--text);border:1px solid var(--border);padding:9px 14px;cursor:pointer;font:inherit;font-size:14px;border-radius:2px;transition:.2s}
+.cal-btn:hover{background:var(--gold);color:#111;border-color:var(--gold)}
+body.light .cal-btn:hover{color:#f7f6f2}
+.seg{display:flex;border:1px solid var(--border);border-radius:2px;overflow:hidden}
+.seg button{background:none;border:none;color:var(--muted);font:600 11px var(--main);letter-spacing:1.5px;text-transform:uppercase;padding:8px 12px;cursor:pointer}
+.seg button.active{background:var(--hover);color:var(--text)}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:2px;display:inline-block;flex:none}
+.sw.study{background:var(--study-bg)} .sw.work{background:var(--work-bg)} .sw.other{background:var(--other-bg);border:1px solid var(--muted)} .sw.tk{background:var(--task);border-radius:50%}
+
+/* calendar grid */
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:var(--border);border:1px solid var(--border)}
+.cal-dow{text-align:center;color:var(--gold);padding:13px 4px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;background:var(--card)}
+.cal-dow.we{color:var(--work-bg)}
+.cal-day{min-height:112px;background:var(--card);padding:9px 9px 8px;display:flex;flex-direction:column;gap:5px;position:relative;cursor:pointer;transition:background .2s;min-width:0}
+.cal-day:hover{background:var(--hover)}
+.cal-day .dn{font-weight:600;font-size:14px;color:var(--muted)}
+.cal-day.we .dn{color:var(--work-bg)}
+.cal-day.other{opacity:.35}
+.cal-day.today{background:var(--today);box-shadow:inset 0 0 0 1px var(--gold)}
+.cal-day.today .dn{color:var(--text)}
+.cal-day.today::after{content:'★';position:absolute;top:8px;right:9px;font-size:10px;color:var(--gold)}
+.mchip{font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.3px;text-transform:uppercase;display:block}
+.mchip.study{background:var(--study-bg);color:var(--study-fg)}
+.mchip.work{background:var(--work-bg);color:var(--work-fg)}
+.mchip.other{background:var(--other-bg);color:var(--other-fg)}
+.mchip.more{background:none;color:var(--muted);padding:0 2px}
+.mchip:nth-child(n+5){display:none}
+.tcount{margin-top:auto;font-size:11px;color:var(--task);display:flex;align-items:center;gap:5px}
+.tcount::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--task)}
+
+/* ===== НЕДЕЛЯ: таблица ===== */
+.grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px}
+.grid{border-collapse:separate;border-spacing:3px;font-weight:600;font-size:12px;text-align:center;min-width:1240px;width:100%;table-layout:fixed;user-select:none;-webkit-user-select:none}
+.grid th,.grid td{height:44px;padding:2px 4px;vertical-align:middle;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-radius:2px}
+.grid .corner{background:var(--hover);color:var(--gold);width:62px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase}
+.grid .h-top{background:var(--work-bg);color:var(--work-fg);height:28px;font-size:11.5px;cursor:text}
+.grid .h-pair{background:var(--study-bg);color:var(--study-fg);height:28px;font-size:11.5px;cursor:text}
+.grid .day{background:var(--card);color:var(--text);font-size:13px;cursor:pointer;width:62px;transition:.15s;border:1px solid var(--border)}
+.grid .day:hover{background:var(--gold);color:var(--bg)}
+.grid .day.today{background:var(--text);color:var(--bg)}
+.grid td.empty{background:var(--card);border:1px solid var(--border);cursor:cell}
+.grid td.empty:hover{background:var(--hover);border-color:var(--gold)}
+.grid td.sel{background:var(--today)!important;border-color:var(--gold)!important}
+.grid td.cell{cursor:pointer;font-size:12.5px;letter-spacing:.4px;text-transform:uppercase}
+.grid td.cell.study,.wb.study{background:var(--study-bg);color:var(--study-fg)}
+.grid td.cell.work,.wb.work{background:var(--work-bg);color:var(--work-fg)}
+.grid td.cell.other,.wb.other{background:var(--other-bg);color:var(--other-fg)}
+.grid td.cell:hover{filter:brightness(1.12)}
+.grid [contenteditable]:focus{background:var(--text);color:var(--bg);outline:none;text-overflow:clip}
+
+/* ===== НЕДЕЛЯ: вертикально ===== */
+.wlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.wday{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.wday.today{border-color:var(--gold)}
+.wh{display:flex;align-items:center;gap:10px;cursor:pointer}
+.wh b{font-family:var(--display);font-size:20px;letter-spacing:3px;text-transform:uppercase;font-weight:600}
+.wh span{font-size:12px;color:var(--muted);margin-right:auto}
+.wh .plus{background:none;border:1px solid var(--border);color:var(--text);width:34px;height:34px;border-radius:2px;font-size:20px;line-height:1;cursor:pointer}
+.wh .plus:hover{background:var(--gold);color:var(--bg)}
+.wb{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:2px;cursor:pointer;min-height:46px}
+.wb .wt{font-size:11px;opacity:.85;font-weight:600;white-space:nowrap}
+.wb .wn{font-weight:700;font-size:13px;letter-spacing:.4px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wempty{font-size:12px;color:var(--muted);padding:6px 2px}
+
+/* ===== ЗАДАЧИ ===== */
+.tasks-layout{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start}
+.lists{background:var(--card);border:1px solid var(--border);padding:8px;border-radius:4px;position:sticky;top:12px}
+.chips-row,.lists-box{display:flex;flex-direction:column}
+.list-item{display:flex;justify-content:space-between;align-items:center;width:100%;padding:11px 12px;background:none;border:none;color:var(--text);font:inherit;font-size:14px;text-align:left;cursor:pointer;border-radius:2px;border-left:2px solid transparent;gap:10px}
+.list-item:hover{background:var(--hover)}
+.list-item.active{background:var(--hover);border-left-color:var(--gold);font-weight:600}
+.list-item em{font-style:normal;font-size:11px;color:var(--muted)}
+.newlist{padding:8px 4px 2px}
+.newlist .input{padding:9px 11px;font-size:14px}
+.tasks{background:var(--card);border:1px solid var(--border);padding:22px;border-radius:4px;min-height:240px}
+.tasks-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px;flex-wrap:wrap}
+.tasks-head h3{font-family:var(--display);font-weight:500;font-size:22px;letter-spacing:3px;text-transform:uppercase}
+.tasks-head button{margin-left:6px}
+.newtask{display:grid;grid-template-columns:1fr 170px auto;gap:8px;margin-bottom:16px}
+.newtask.two{grid-template-columns:1fr auto}
+.task{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--border)}
+.chk{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:1.5px solid var(--muted);border-radius:3px;cursor:pointer;flex:none;display:grid;place-items:center;transition:.15s;background:none}
+.chk:checked{background:var(--task);border-color:var(--task)}
+.chk:checked::after{content:'✓';color:#0b0b0a;font-size:14px;font-weight:700;line-height:1}
+.task .t{flex:1;font-size:15px;word-break:break-word;min-width:0;padding:2px 0}
+.task.done .t{text-decoration:line-through;color:var(--muted)}
+.task .t:focus{background:var(--bg);outline:1px solid var(--gold);padding:2px 6px}
+.tags{display:flex;gap:6px;align-items:center;flex:none}
+.badge{font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border:1px solid var(--border);color:var(--muted);border-radius:2px;white-space:nowrap}
+.dateinp{background:none;border:1px solid var(--border);color:var(--muted);font:inherit;font-size:11px;padding:3px 6px;border-radius:2px;width:112px;cursor:pointer}
+.dateinp.today{border-color:var(--gold);color:var(--text)}
+.dateinp.late{border-color:var(--error);color:var(--error)}
+.x{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:4px 8px;opacity:.6}
+.x:hover{color:var(--error);opacity:1}
+.sub{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin:6px 0 2px}
+.empty-msg{color:var(--muted);font-size:13px;padding:10px 2px}
+.done-toggle{margin-top:14px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);background:none;border:none;cursor:pointer;padding:6px 0}
+
+/* modal / bottom sheet */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(6px);padding:16px}
+.overlay.top{z-index:110}
+.modal{background:var(--bg);border:1px solid var(--border);padding:26px;width:100%;max-width:440px;max-height:92vh;overflow:auto;-webkit-overflow-scrolling:touch;border-radius:4px;position:relative;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 50px rgba(0,0,0,.6);animation:pop .22s ease}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+.modal.wide{max-width:560px}
+.modal h3{font-family:var(--display);font-weight:500;text-transform:uppercase;letter-spacing:3px;text-align:center;font-size:20px}
+#blockForm h3{border-bottom:1px solid var(--border);padding-bottom:12px}
+.close{position:absolute;top:8px;right:12px;font-size:28px;cursor:pointer;color:var(--muted);width:40px;height:40px;display:grid;place-items:center;z-index:2}
+.close:hover{color:var(--error)}
+.day-head{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding:0 34px 14px 0}
+.day-head h3{font-size:19px}
+.day-sub{text-align:center;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.modal label,.field{display:flex;flex-direction:column;gap:6px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.lbl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kinds,.days{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:10px 14px;border-radius:2px;font:600 12px var(--main);cursor:pointer;text-transform:uppercase;letter-spacing:.5px;border:1px solid var(--border);color:var(--muted);background:var(--card)}
+.chip.on{color:var(--text);border-color:var(--text)}
+.kinds .chip.study.on{background:var(--study-bg);color:var(--study-fg);border-color:var(--study-bg)}
+.kinds .chip.work.on{background:var(--work-bg);color:var(--work-fg);border-color:var(--work-bg)}
+.kinds .chip.other.on{background:var(--other-bg);color:var(--other-fg);border-color:var(--text)}
+.days .chip{min-width:44px;text-align:center;padding:10px 0;flex:1}
+.days .chip.on{background:var(--text);color:var(--bg)}
+.modal-actions{display:flex;justify-content:space-between;gap:10px;margin-top:4px}
+.err{color:var(--error);font-size:13px;min-height:18px}
+.drow{display:flex;align-items:center;gap:10px;padding:11px 12px;margin-bottom:6px;border-radius:2px;cursor:pointer;min-height:46px}
+.drow.study{background:var(--study-bg);color:var(--study-fg)}
+.drow.work{background:var(--work-bg);color:var(--work-fg)}
+.drow.other{background:var(--other-bg);color:var(--other-fg)}
+.drow b{font-size:13px;letter-spacing:.4px;text-transform:uppercase}
+.drow small{margin-left:auto;font-size:12px;font-weight:600;opacity:.85;white-space:nowrap}
+
+/* login */
+.login{max-width:380px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:20px;text-align:center}
+.login .input{margin-bottom:10px}
+.crest{width:56px;height:56px;margin:0 auto 22px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);position:relative;font-family:var(--display);font-size:22px}
+.crest::before{content:'';position:absolute;inset:-6px;border:1px solid var(--border)}
+.eyebrow{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+.logo{font-family:var(--display);font-size:42px;letter-spacing:8px;text-transform:uppercase;font-weight:500}
+.rule{width:60px;height:1px;background:var(--gold);margin:18px auto 28px}
+.auth-msg{min-height:22px;margin:12px 0;font-size:13px;color:var(--error)}
+.auth-msg.ok{color:var(--ok)}
+.toast{position:fixed;bottom:calc(84px + var(--safe-b));left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 18px;font-size:13px;border-radius:2px;z-index:300;max-width:90vw;text-align:center}
+
+/* ===== ТЕЛЕФОН ===== */
+@media(max-width:820px){
+  .container{padding:max(16px,env(safe-area-inset-top)) 12px calc(96px + var(--safe-b))}
+  .header{padding-bottom:14px;margin-bottom:16px}
+  .brand h1{font-size:20px;letter-spacing:4px}
+  .sync b{display:none}
+  .cal-title{font-size:22px;letter-spacing:2px}
+  /* нижняя панель вкладок */
+  .switch{position:fixed;left:0;right:0;bottom:0;z-index:50;margin:0;border:none;border-top:1px solid var(--border);border-radius:0;background:var(--card);padding-bottom:var(--safe-b);display:grid;grid-template-columns:repeat(3,1fr)}
+  .switch button{flex-direction:column;gap:3px;padding:10px 4px 9px;border:none;color:var(--muted);font-size:10px;letter-spacing:1px;justify-content:center}
+  .switch button svg{display:block;width:22px;height:22px}
+  .switch button.active{background:none;color:var(--text)}
+  .switch button.active svg{stroke:var(--gold)}
+  /* календарь */
+  .legend{gap:12px;font-size:11px}
+  .cal-dow{padding:10px 0;font-size:9px;letter-spacing:.5px}
+  .cal-day{min-height:62px;padding:6px 4px;align-items:center;gap:4px}
+  .cal-day .dn{font-size:13px}
+  .cal-day.today::after{top:3px;right:4px;font-size:8px}
+  .cal-day .mchips{display:flex;flex-wrap:wrap;gap:3px;justify-content:center}
+  .mchip{width:7px;height:7px;border-radius:50%;padding:0;font-size:0;display:inline-block}
+  .mchip.more{display:none}
+  .tcount{margin-top:0;font-size:0}
+  .tcount::before{width:6px;height:6px}
+  .cal-nav .cal-btn{padding:9px 12px}
+  /* неделя */
+  .wlist{grid-template-columns:1fr}
+  .grid-wrap{margin:0 -12px;padding:0 12px 6px}
+  /* задачи */
+  .tasks-layout{grid-template-columns:1fr;gap:12px}
+  .lists{position:static;padding:0;background:none;border:none}
+  .chips-row{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .lists-box{flex-direction:row;gap:6px}
+  .list-item{width:auto;flex:none;border:1px solid var(--border);background:var(--card);padding:10px 14px;border-radius:20px}
+  .list-item.active{border-color:var(--gold);border-left-width:1px}
+  .newlist{padding:6px 0 0}
+  .tasks{padding:14px}
+  .tasks-head h3{font-size:19px}
+  .newtask{grid-template-columns:1fr 1fr}
+  .newtask .input:first-child{grid-column:1/-1}
+  .newtask.two{grid-template-columns:1fr auto}
+  .newtask.two .input:first-child{grid-column:auto}
+  .task{flex-wrap:wrap;gap:8px 10px}
+  .task .t{flex-basis:calc(100% - 100px)}
+  .tags{margin-left:32px;order:3;flex-basis:calc(100% - 32px);min-width:0}
+  .tags .x{margin-left:auto}
+  /* модалки — нижние листы */
+  .overlay{align-items:flex-end;padding:0}
+  .modal{max-width:none;border-radius:14px 14px 0 0;max-height:92vh;padding:22px 16px calc(22px + var(--safe-b));animation:up .25s ease}
+  @keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+  .modal.wide{max-width:none}
+}
+.mchips{display:flex;flex-direction:column;gap:3px;width:100%;min-width:0}
+.mchip:nth-child(n+5):not(.more){display:none}
+@media(max-width:820px){.mchips{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:3px}}
+.tasks-layout>*,.lists,.tasks{min-width:0}
+html,body{overflow-x:hidden}
+
+</style>
 </head>
 <body>
 
@@ -144,7 +413,418 @@
   <div id="toast" class="toast" hidden></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+  <script>
+// Вставьте данные своего проекта Supabase (Project Settings → API).
+window.PLANNER_CONFIG = {
+  SUPABASE_URL: 'https://jqkjmnuwfsjtrmtumubv.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impxa2ptbnV3ZnNqdHJtdHVtdWJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4MjMyMTcsImV4cCI6MjEwNzM5OTIxN30.iaHBpTcZjbrdqzTfDuiAiHRu7k93epYMMVHLfzu_62U'
+};
+</script>
+  <script>
+(function () {
+  'use strict';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  const DAYS_FULL = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+  const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+  const MONTHS_G = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+  const KINDS = { study: 'Учёба', work: 'Работа', other: 'Другое' };
+  const NCOLS = 14;
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + Math.random().toString(16).slice(2));
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const pad = n => String(n).padStart(2, '0');
+  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const wdOf = d => (d.getDay() + 6) % 7;
+  const todayStr = () => fmt(new Date());
+  const isMobile = () => matchMedia('(max-width:820px)').matches;
+  const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+  const DEFAULT_SETTINGS = {
+    top: ['08:00-09:00', '09:00-10:00', '10:00-11:00', '11:00-12:00', '12:00-13:00', '13:00-14:00', '14:00-15:00', '15:00-16:00', '17:00-18:00', '18:00-19:00', '19:00-20:00', '20:00-21:00', '21:00-22:00', '22:00-23:00'],
+    pairs: ['7:50 - 8:40', '8:55 - 9:45', '10:00 - 10:50', '11:05 - 11:55', '12:10 - 13:00', '13:15 - 14:05', '14:20 - 15:10', '15:25 - 16:15', '16:30 - 17:20', '17:30 - 18:20', '18:30 - 19:20', '19:30 - 20:20', '20:30 - 21:20', '21:30 - 22:20']
+  };
+  const SEED = [[0,0,0,'ОКЗИ','study'],[0,2,3,'ИИ','study'],[0,5,5,'ИБООП','study'],[0,7,13,'РАБОТА','work'],[1,0,0,'ИБООП','study'],[1,4,5,'ОКЗИ','study'],[1,8,9,'МИКРОЭЛЕКТРОНИКА','study'],[2,0,0,'ИИ','study'],[2,7,13,'РАБОТА','work'],[3,1,1,'МКР ЭЛ','study'],[3,2,4,'ТВМС','study'],[3,5,5,'ИБООП','study'],[3,6,8,'ОББД','study'],[4,7,13,'РАБОТА','work'],[5,2,7,'РАБОТА','work'],[6,7,13,'РАБОТА','work']];
+
+  const now = new Date();
+  const S = {
+    blocks: [], lists: [], tasks: [], settings: structuredClone(DEFAULT_SETTINGS),
+    tab: store.get('planner_tab') || 'cal', month: new Date(now.getFullYear(), now.getMonth(), 1),
+    weekMode: store.get('planner_weekmode') || (isMobile() ? 'list' : 'table'),
+    view: 'today', showDone: false, editId: null, openDate: null
+  };
+
+  /* ---------- хранилище ---------- */
+  const cfg = window.PLANNER_CONFIG || {};
+  const cloudReady = !!(cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && window.supabase);
+  const sb = cloudReady ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY) : null;
+  const TBL = { blocks: 'planner_blocks', lists: 'planner_lists', tasks: 'planner_tasks' };
+  let mode = 'local', user = null, pending = 0;
+
+  const cacheKey = () => 'planner_v2_' + (user ? user.id : 'local');
+  const cacheSave = () => store.set(cacheKey(), JSON.stringify({ blocks: S.blocks, lists: S.lists, tasks: S.tasks, settings: S.settings }));
+  const cacheLoad = () => { try { return JSON.parse(store.get(cacheKey())); } catch (e) { return null; } };
+  function setSync(state, text) { const el = $('#syncState'); el.className = 'sync ' + state; $('b', el).textContent = text; }
+  async function cloud(fn) {
+    if (mode !== 'cloud') return;
+    pending++; setSync('busy', 'сохранение');
+    try { const { error } = await fn(); if (error) throw error; pending--; if (!pending) setSync('', 'синхронизировано'); }
+    catch (e) { pending--; console.error(e); setSync('err', 'ошибка сети'); }
+  }
+  const withUser = r => ({ ...r, user_id: user.id });
+  const persist = {
+    save(kind, row) { cacheSave(); return cloud(() => sb.from(TBL[kind]).upsert(withUser(row))); },
+    saveMany(kind, rows) { cacheSave(); if (!rows.length) return; return cloud(() => sb.from(TBL[kind]).upsert(rows.map(withUser))); },
+    del(kind, id) { cacheSave(); return cloud(() => sb.from(TBL[kind]).delete().eq('id', id)); },
+    settings() { cacheSave(); return cloud(() => sb.from('planner_settings').upsert({ user_id: user.id, top: S.settings.top, pairs: S.settings.pairs })); }
+  };
+  async function loadAll() {
+    if (mode === 'cloud') {
+      setSync('busy', 'загрузка');
+      try {
+        const [b, l, t, st] = await Promise.all([
+          sb.from(TBL.blocks).select('*'), sb.from(TBL.lists).select('*').order('position'),
+          sb.from(TBL.tasks).select('*').order('position'), sb.from('planner_settings').select('*').maybeSingle()
+        ]);
+        for (const r of [b, l, t, st]) if (r.error) throw r.error;
+        S.blocks = b.data; S.lists = l.data; S.tasks = t.data;
+        S.settings = st.data ? { top: st.data.top || DEFAULT_SETTINGS.top, pairs: st.data.pairs || DEFAULT_SETTINGS.pairs } : structuredClone(DEFAULT_SETTINGS);
+        if (!b.data.length && !l.data.length && !st.data) await seedFresh();
+        setSync('', 'синхронизировано'); cacheSave(); return;
+      } catch (e) {
+        console.error(e); setSync('err', 'офлайн');
+        const c = cacheLoad(); if (c) Object.assign(S, c); else toast('Не удалось загрузить данные');
+        return;
+      }
+    }
+    const c = cacheLoad();
+    if (c) Object.assign(S, c); else await seedFresh();
+    setSync('', 'локально');
+  }
+  async function seedFresh() {
+    S.blocks = SEED.map(([day, s, e, title, kind]) => ({ id: uid(), day, start_col: s, end_col: e, title, kind }));
+    const inbox = { id: uid(), name: 'Входящие', position: 0 }, study = { id: uid(), name: 'Учёба', position: 1 };
+    S.lists = [inbox, study];
+    S.tasks = [
+      { id: uid(), list_id: study.id, text: 'Подготовиться к лекции', done: false, due: todayStr(), position: 0 },
+      { id: uid(), list_id: inbox.id, text: 'Нажмите на текст, чтобы изменить', done: false, due: null, position: 0 }
+    ];
+    S.settings = structuredClone(DEFAULT_SETTINGS); cacheSave();
+    if (mode === 'cloud') { await persist.saveMany('blocks', S.blocks); await persist.saveMany('lists', S.lists); await persist.saveMany('tasks', S.tasks); await persist.settings(); }
+  }
+
+  let tt; function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 2600); }
+
+  /* ---------- вспомогательное ---------- */
+  const blocksOf = wd => S.blocks.filter(b => b.day === wd).sort((a, b) => a.start_col - b.start_col);
+  const timeRange = b => `${(S.settings.top[b.start_col] || '').split('-')[0]}–${(S.settings.top[b.end_col] || '').split('-')[1] || ''}`;
+  const blockAt = (day, col, ignore) => S.blocks.find(b => b.day === day && b.id !== ignore && col >= b.start_col && col <= b.end_col);
+  const rangeFree = (day, a, b, ignore) => { for (let c = a; c <= b; c++) if (blockAt(day, c, ignore)) return false; return true; };
+  const weekDate = wd => { const d = new Date(); d.setDate(d.getDate() - wdOf(d) + wd); return d; };
+
+  function renderAll() { renderCal(); renderWeek(); renderLists(); renderTasks(); if (S.openDate) renderSheet(); }
+
+  /* ---------- вкладки ---------- */
+  function setTab(t) {
+    S.tab = t; store.set('planner_tab', t);
+    $$('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+    ['cal', 'week', 'tasks'].forEach(v => $('#v-' + v).hidden = v !== t);
+    scrollTo(0, 0);
+  }
+  $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.tab); });
+
+  /* ---------- КАЛЕНДАРЬ ---------- */
+  function renderCal() {
+    const y = S.month.getFullYear(), m = S.month.getMonth();
+    $('#calTitle').textContent = `${MONTHS[m]} ${y} г.`;
+    const offset = wdOf(new Date(y, m, 1)), total = Math.ceil((offset + new Date(y, m + 1, 0).getDate()) / 7) * 7, ts = todayStr();
+    let h = DAYS.map((d, i) => `<div class="cal-dow ${i > 4 ? 'we' : ''}">${d}</div>`).join('');
+    for (let i = 0; i < total; i++) {
+      const d = new Date(y, m, 1 - offset + i), ds = fmt(d), wd = wdOf(d);
+      const bl = blocksOf(wd), open = S.tasks.filter(t => t.due === ds && !t.done).length;
+      let chips = bl.slice(0, 4).map(b => `<span class="mchip ${b.kind}">${esc(b.title)}</span>`).join('');
+      if (bl.length > 4) chips += `<span class="mchip more">+${bl.length - 4}</span>`;
+      h += `<div class="cal-day ${d.getMonth() !== m ? 'other' : ''} ${ds === ts ? 'today' : ''} ${wd > 4 ? 'we' : ''}" data-date="${ds}">
+        <div class="dn">${d.getDate()}</div><div class="mchips">${chips}</div>${open ? `<div class="tcount">${open}</div>` : ''}</div>`;
+    }
+    $('#calGrid').innerHTML = h;
+  }
+  $('#calGrid').addEventListener('click', e => { const c = e.target.closest('.cal-day'); if (c) openDate(c.dataset.date); });
+  $('#calPrev').addEventListener('click', () => { S.month = new Date(S.month.getFullYear(), S.month.getMonth() - 1, 1); renderCal(); });
+  $('#calNext').addEventListener('click', () => { S.month = new Date(S.month.getFullYear(), S.month.getMonth() + 1, 1); renderCal(); });
+  $('#calToday').addEventListener('click', () => { const n = new Date(); S.month = new Date(n.getFullYear(), n.getMonth(), 1); renderCal(); });
+
+  /* ---------- НЕДЕЛЯ ---------- */
+  function renderWeek() {
+    $$('#weekMode button').forEach(b => b.classList.toggle('active', b.dataset.m === S.weekMode));
+    $('#weekList').hidden = S.weekMode !== 'list'; $('#gridWrap').hidden = S.weekMode !== 'table';
+    S.weekMode === 'list' ? renderWeekList() : renderGrid();
+  }
+  function renderWeekList() {
+    const t = wdOf(new Date());
+    $('#weekList').innerHTML = DAYS_FULL.map((name, wd) => {
+      const d = weekDate(wd), bl = blocksOf(wd);
+      return `<div class="wday ${wd === t ? 'today' : ''}"><div class="wh" data-wd="${wd}"><b>${name}</b><span>${d.getDate()} ${MONTHS_G[d.getMonth()]}</span><button class="plus" data-add="${wd}" aria-label="Добавить блок">+</button></div>
+        ${bl.length ? bl.map(b => `<div class="wb ${b.kind}" data-block="${b.id}"><span class="wt">${esc(timeRange(b))}</span><span class="wn">${esc(b.title)}</span></div>`).join('') : '<div class="wempty">Свободно</div>'}</div>`;
+    }).join('');
+  }
+  $('#weekList').addEventListener('click', e => {
+    const add = e.target.closest('[data-add]'); if (add) return openBlockModal({ day: +add.dataset.add });
+    const b = e.target.closest('[data-block]'); if (b) return openBlockModal({ id: b.dataset.block });
+    const h = e.target.closest('.wh'); if (h) openDate(fmt(weekDate(+h.dataset.wd)));
+  });
+  $('#weekMode').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.weekMode = b.dataset.m; store.set('planner_weekmode', S.weekMode); renderWeek(); });
+
+  function renderGrid() {
+    const t = wdOf(new Date());
+    let h = `<tr><th class="corner" rowspan="2">Время</th>${S.settings.top.map((x, i) => `<th class="h-top" data-h="top" data-i="${i}">${esc(x)}</th>`).join('')}</tr>`;
+    h += `<tr>${S.settings.pairs.map((x, i) => `<th class="h-pair" data-h="pairs" data-i="${i}">${esc(x)}</th>`).join('')}</tr>`;
+    for (let d = 0; d < 7; d++) {
+      h += `<tr><th class="day ${d === t ? 'today' : ''}" data-day="${d}">${DAYS[d]}</th>`;
+      for (let c = 0; c < NCOLS;) {
+        const b = S.blocks.find(x => x.day === d && x.start_col === c);
+        if (b) { const span = b.end_col - b.start_col + 1; h += `<td class="cell ${b.kind}" colspan="${span}" data-block="${b.id}">${esc(b.kind === 'work' && span > 1 ? Array(Math.max(1, Math.round(span * 1.4))).fill(b.title).join(' ') : b.title)}</td>`; c += span; }
+        else if (blockAt(d, c)) c++;
+        else { h += `<td class="empty" data-day="${d}" data-col="${c}"></td>`; c++; }
+      }
+      h += '</tr>';
+    }
+    $('#grid').innerHTML = h;
+  }
+  let drag = null; const grid = $('#grid');
+  grid.addEventListener('pointerdown', e => {
+    const td = e.target.closest('td.empty'); if (!td || e.button) return;
+    drag = { day: +td.dataset.day, a: +td.dataset.col, b: +td.dataset.col, type: e.pointerType }; paintSel();
+  });
+  grid.addEventListener('pointermove', e => {
+    if (!drag || drag.type === 'touch') return;
+    const el = document.elementFromPoint(e.clientX, e.clientY), td = el && el.closest && el.closest('td.empty');
+    if (!td || +td.dataset.day !== drag.day) return;
+    const c = +td.dataset.col; if (c === drag.b) return;
+    const step = c > drag.a ? 1 : -1; let ok = drag.a;
+    for (let i = drag.a; i !== c + step; i += step) { if (blockAt(drag.day, i)) break; ok = i; }
+    drag.b = ok; paintSel();
+  });
+  window.addEventListener('pointerup', () => { if (!drag) return; const d = drag; drag = null; paintSel(); openBlockModal({ day: d.day, from: Math.min(d.a, d.b), to: Math.max(d.a, d.b) }); });
+  window.addEventListener('pointercancel', () => { drag = null; paintSel(); });
+  function paintSel() {
+    $$('td.sel', grid).forEach(x => x.classList.remove('sel'));
+    if (!drag) return; const lo = Math.min(drag.a, drag.b), hi = Math.max(drag.a, drag.b);
+    $$(`td.empty[data-day="${drag.day}"]`, grid).forEach(td => { const c = +td.dataset.col; if (c >= lo && c <= hi) td.classList.add('sel'); });
+  }
+  grid.addEventListener('click', e => {
+    const b = e.target.closest('td.cell'); if (b) return openBlockModal({ id: b.dataset.block });
+    const d = e.target.closest('th.day'); if (d) openDate(fmt(weekDate(+d.dataset.day)));
+  });
+  function editHeader(th) {
+    th.contentEditable = 'plaintext-only'; th.focus();
+    const r = document.createRange(); r.selectNodeContents(th); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    th.addEventListener('blur', () => { th.contentEditable = 'false'; const v = th.textContent.trim(); if (v) { S.settings[th.dataset.h][+th.dataset.i] = v; persist.settings(); } renderAll(); }, { once: true });
+    th.addEventListener('keydown', k => { if (k.key === 'Enter') { k.preventDefault(); th.blur(); } });
+  }
+  grid.addEventListener('dblclick', e => { const th = e.target.closest('th[data-h]'); if (th) editHeader(th); });
+  let lastTap = 0; // двойное касание на телефоне
+  grid.addEventListener('touchend', e => {
+    const th = e.target.closest('th[data-h]'); if (!th || th.isContentEditable) return;
+    const t = Date.now(); if (t - lastTap < 350) { e.preventDefault(); editHeader(th); } lastTap = t;
+  });
+
+  /* ---------- модалка блока ---------- */
+  let bKind = 'study', bDays = new Set();
+  const DEFAULT_TITLE = { study: '', work: 'РАБОТА', other: '' };
+  function openBlockModal(o) {
+    const ex = o.id ? S.blocks.find(b => b.id === o.id) : null;
+    S.editId = ex ? ex.id : null;
+    $('#blockModalTitle').textContent = ex ? 'Изменить блок' : 'Новый блок';
+    $('#bDelete').style.visibility = ex ? 'visible' : 'hidden';
+    $('#bTitle').value = ex ? ex.title : '';
+    bKind = ex ? ex.kind : 'study';
+    bDays = new Set(ex ? [ex.day] : [o.day ?? (S.openDate ? wdOf(parse(S.openDate)) : wdOf(new Date()))]);
+    const opts = Array.from({ length: NCOLS }, (_, i) => `<option value="${i}">${esc(S.settings.top[i])}  ·  ${esc(S.settings.pairs[i])}</option>`).join('');
+    $('#bFrom').innerHTML = opts; $('#bTo').innerHTML = opts;
+    $('#bFrom').value = ex ? ex.start_col : (o.from ?? 0); $('#bTo').value = ex ? ex.end_col : (o.to ?? o.from ?? 0);
+    $('#bErr').textContent = ''; paintChips(); $('#blockModal').hidden = false;
+    if (!isMobile()) setTimeout(() => $('#bTitle').focus(), 30);
+  }
+  function paintChips() {
+    $('#bKinds').innerHTML = Object.entries(KINDS).map(([k, n]) => `<span class="chip ${k} ${bKind === k ? 'on' : ''}" data-kind="${k}">${n}</span>`).join('');
+    $('#bDays').innerHTML = DAYS.map((d, i) => `<span class="chip ${bDays.has(i) ? 'on' : ''}" data-d="${i}">${d}</span>`).join('');
+  }
+  $('#bKinds').addEventListener('click', e => {
+    const c = e.target.closest('[data-kind]'); if (!c) return; bKind = c.dataset.kind;
+    const cur = $('#bTitle').value.trim(); if (!cur || Object.values(DEFAULT_TITLE).includes(cur)) $('#bTitle').value = DEFAULT_TITLE[bKind];
+    paintChips();
+  });
+  $('#bDays').addEventListener('click', e => { const c = e.target.closest('[data-d]'); if (!c) return; const d = +c.dataset.d; bDays.has(d) ? bDays.delete(d) : bDays.add(d); paintChips(); });
+  $('#blockForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const title = $('#bTitle').value.trim(), a = +$('#bFrom').value, b = +$('#bTo').value, lo = Math.min(a, b), hi = Math.max(a, b);
+    if (!title) return $('#bErr').textContent = 'Введите название';
+    if (!bDays.size) return $('#bErr').textContent = 'Выберите хотя бы один день';
+    const days = [...bDays].sort();
+    for (const d of days) if (!rangeFree(d, lo, hi, S.editId)) return $('#bErr').textContent = `В «${DAYS_FULL[d]}» это время уже занято`;
+    const ex = S.editId ? S.blocks.find(x => x.id === S.editId) : null, changed = [];
+    days.forEach((d, i) => {
+      if (ex && i === 0) { Object.assign(ex, { day: d, start_col: lo, end_col: hi, title, kind: bKind }); changed.push(ex); }
+      else { const nb = { id: uid(), day: d, start_col: lo, end_col: hi, title, kind: bKind }; S.blocks.push(nb); changed.push(nb); }
+    });
+    persist.saveMany('blocks', changed); $('#blockModal').hidden = true; renderAll();
+  });
+  $('#bDelete').addEventListener('click', () => {
+    if (!S.editId) return; S.blocks = S.blocks.filter(b => b.id !== S.editId); persist.del('blocks', S.editId); $('#blockModal').hidden = true; renderAll();
+  });
+  $('#addBlockBtn').addEventListener('click', () => openBlockModal({ day: wdOf(new Date()) }));
+
+  /* ---------- модалка дня ---------- */
+  function openDate(ds) { S.openDate = ds; renderSheet(); $('#dayModal').hidden = false; }
+  function shiftDate(n) { const d = parse(S.openDate); d.setDate(d.getDate() + n); S.openDate = fmt(d); renderSheet(); }
+  function renderSheet() {
+    const ds = S.openDate, d = parse(ds), wd = wdOf(d);
+    $('#dayTitle').textContent = `${d.getDate()} ${MONTHS_G[d.getMonth()]}`;
+    $('#daySub').textContent = DAYS_FULL[wd] + (ds === todayStr() ? ' · сегодня' : '');
+    const bl = blocksOf(wd);
+    $('#dayBlocks').innerHTML = bl.length ? bl.map(b => `<div class="drow ${b.kind}" data-block="${b.id}"><b>${esc(b.title)}</b><small>${esc(timeRange(b))}</small></div>`).join('') : '<div class="empty-msg">Свободный день</div>';
+    const tk = S.tasks.filter(t => t.due === ds).sort((a, b) => a.done - b.done);
+    $('#dayTasks').innerHTML = tk.length ? tk.map(t => taskHTML(t, 'sheet')).join('') : '<div class="empty-msg">Задач на этот день нет</div>';
+  }
+  $('#dayPrev').addEventListener('click', () => shiftDate(-1));
+  $('#dayNext').addEventListener('click', () => shiftDate(1));
+  $('#dayBlocks').addEventListener('click', e => { const r = e.target.closest('[data-block]'); if (r) openBlockModal({ id: r.dataset.block }); });
+  $('#dayAddBlock').addEventListener('click', () => openBlockModal({ day: wdOf(parse(S.openDate)) }));
+  $('#dayTaskForm').addEventListener('submit', e => {
+    e.preventDefault(); const v = $('#dayTaskText').value.trim(); if (!v) return;
+    addTask(v, S.openDate, defaultListId()); $('#dayTaskText').value = '';
+  });
+  ['click'].forEach(ev => $('#dayTasks').addEventListener(ev, taskClick));
+  $('#dayTasks').addEventListener('change', taskChange); $('#dayTasks').addEventListener('focusout', taskEdit);
+  $('#dayTasks').addEventListener('keydown', taskKey);
+
+  document.addEventListener('click', e => {
+    const ov = e.target.classList.contains('overlay') ? e.target : (e.target.matches('[data-close]') ? e.target.closest('.overlay') : null);
+    if (ov) closeOverlay(ov);
+  });
+  function closeOverlay(ov) { ov.hidden = true; if (ov.id === 'dayModal') S.openDate = null; }
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    const top = !$('#blockModal').hidden ? $('#blockModal') : (!$('#dayModal').hidden ? $('#dayModal') : null); if (top) closeOverlay(top);
+  });
+
+  /* ---------- ЗАДАЧИ ---------- */
+  const defaultListId = () => (S.view !== 'today' && S.view !== 'all' && S.lists.find(l => l.id === S.view)) ? S.view : (S.lists[0] && S.lists[0].id);
+  function addTask(text, due, listId) {
+    if (!listId) { const l = { id: uid(), name: 'Входящие', position: S.lists.length }; S.lists.push(l); persist.save('lists', l); listId = l.id; }
+    const t = { id: uid(), list_id: listId, text, done: false, due: due || null, position: S.tasks.length };
+    S.tasks.push(t); persist.save('tasks', t); renderAll();
+  }
+  function taskHTML(t, ctx) {
+    const list = S.lists.find(l => l.id === t.list_id), ts = todayStr();
+    const cls = t.due === ts ? 'today' : (t.due && t.due < ts && !t.done ? 'late' : '');
+    const showList = ctx === 'sheet' || S.view === 'today' || S.view === 'all';
+    return `<div class="task ${t.done ? 'done' : ''}" data-id="${t.id}">
+      <input type="checkbox" class="chk" ${t.done ? 'checked' : ''} aria-label="Выполнено">
+      <span class="t" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done">${esc(t.text)}</span>
+      <span class="tags">${showList && list ? `<span class="badge">${esc(list.name)}</span>` : ''}
+      ${ctx === 'sheet' ? '' : `<input type="date" class="dateinp ${cls}" value="${t.due || ''}" aria-label="Дата">`}
+      <button class="x" data-act="del" aria-label="Удалить">&times;</button></span></div>`;
+  }
+  function visibleTasks() {
+    if (S.view === 'today') return S.tasks.filter(t => t.due === todayStr());
+    if (S.view === 'all') return S.tasks;
+    return S.tasks.filter(t => t.list_id === S.view);
+  }
+  function renderLists() {
+    $('#cntToday').textContent = S.tasks.filter(t => t.due === todayStr() && !t.done).length;
+    $('#cntAll').textContent = S.tasks.filter(t => !t.done).length;
+    $('#listsBox').innerHTML = [...S.lists].sort((a, b) => a.position - b.position).map(l => `<button class="list-item" data-list="${l.id}"><span>${esc(l.name)}</span><em>${S.tasks.filter(t => t.list_id === l.id && !t.done).length}</em></button>`).join('');
+    $$('.list-item').forEach(b => b.classList.toggle('active', b.dataset.list === S.view));
+  }
+  function renderTasks() {
+    if (S.view !== 'today' && S.view !== 'all' && !S.lists.find(l => l.id === S.view)) S.view = 'today';
+    const l = S.lists.find(x => x.id === S.view);
+    $('#listTitle').textContent = S.view === 'today' ? 'Сегодня' : S.view === 'all' ? 'Все задачи' : l.name;
+    $('#listTools').innerHTML = l ? '<button class="btn btn-sm" id="renameList">Переименовать</button><button class="btn btn-sm btn-danger" id="deleteList">Удалить</button>' : '';
+    if (S.view === 'today') $('#newTaskDate').value = todayStr();
+    const all = visibleTasks(), open = all.filter(t => !t.done), done = all.filter(t => t.done);
+    let h = open.length ? open.map(t => taskHTML(t)).join('') : '<div class="empty-msg">Задач нет</div>';
+    if (done.length) { h += `<button class="done-toggle" id="doneToggle">${S.showDone ? '▾' : '▸'} Выполнено (${done.length})</button>`; if (S.showDone) h += done.map(t => taskHTML(t)).join(''); }
+    $('#taskBox').innerHTML = h;
+  }
+  const taskOf = el => { const r = el.closest('.task'); return r && S.tasks.find(t => t.id === r.dataset.id); };
+  function taskClick(e) {
+    const t = taskOf(e.target); if (!t) return;
+    if (e.target.dataset.act === 'del') { S.tasks = S.tasks.filter(x => x.id !== t.id); persist.del('tasks', t.id); renderAll(); }
+  }
+  function taskChange(e) {
+    const t = taskOf(e.target); if (!t) return;
+    if (e.target.classList.contains('chk')) t.done = e.target.checked;
+    else if (e.target.classList.contains('dateinp')) t.due = e.target.value || null;
+    else return;
+    persist.save('tasks', t); renderAll();
+  }
+  function taskEdit(e) {
+    if (!e.target.classList.contains('t')) return; const t = taskOf(e.target); if (!t) return;
+    const v = e.target.textContent.trim(); if (!v) { e.target.textContent = t.text; return; }
+    if (v !== t.text) { t.text = v; persist.save('tasks', t); }
+  }
+  function taskKey(e) { if (e.key === 'Enter' && e.target.classList.contains('t')) { e.preventDefault(); e.target.blur(); } }
+  $('#taskBox').addEventListener('click', e => { if (e.target.id === 'doneToggle') { S.showDone = !S.showDone; renderTasks(); } else taskClick(e); });
+  $('#taskBox').addEventListener('change', taskChange); $('#taskBox').addEventListener('focusout', taskEdit); $('#taskBox').addEventListener('keydown', taskKey);
+  $('#newTaskForm').addEventListener('submit', e => {
+    e.preventDefault(); const v = $('#newTaskText').value.trim(); if (!v) return;
+    addTask(v, $('#newTaskDate').value, defaultListId()); $('#newTaskText').value = '';
+    if (!isMobile()) $('#newTaskText').focus();
+  });
+  $('.lists').addEventListener('click', e => { const b = e.target.closest('.list-item'); if (b) { S.view = b.dataset.list; renderLists(); renderTasks(); } });
+  $('#newListForm').addEventListener('submit', e => {
+    e.preventDefault(); const v = $('#newListName').value.trim(); if (!v) return;
+    const l = { id: uid(), name: v, position: S.lists.length }; S.lists.push(l); persist.save('lists', l); S.view = l.id; $('#newListName').value = ''; renderLists(); renderTasks();
+  });
+  $('#listTools').addEventListener('click', e => {
+    const l = S.lists.find(x => x.id === S.view); if (!l) return;
+    if (e.target.id === 'renameList') { const n = prompt('Название списка', l.name); if (n && n.trim()) { l.name = n.trim(); persist.save('lists', l); renderAll(); } }
+    if (e.target.id === 'deleteList' && confirm(`Удалить список «${l.name}» вместе с задачами?`)) {
+      S.tasks = S.tasks.filter(t => t.list_id !== l.id); S.lists = S.lists.filter(x => x.id !== l.id); persist.del('lists', l.id); S.view = 'today'; renderAll();
+    }
+  });
+
+  /* ---------- тема ---------- */
+  const applyTheme = t => { document.body.classList.toggle('light', t === 'light'); $('meta[name=theme-color]').content = t === 'light' ? '#f7f6f2' : '#0b0b0a'; };
+  applyTheme(store.get('planner_theme'));
+  $('#themeBtn').addEventListener('click', () => { const t = document.body.classList.contains('light') ? 'dark' : 'light'; applyTheme(t); store.set('planner_theme', t); });
+
+  /* ---------- вход / запуск ---------- */
+  async function startApp() {
+    $('#login-view').hidden = true; $('#app').hidden = false;
+    $('#modeLabel').textContent = mode === 'cloud' ? (user.email || 'Личный') : 'Личный';
+    $('#logoutBtn').hidden = mode === 'local';
+    await loadAll(); setTab(S.tab); renderAll();
+  }
+  function showLogin() { $('#app').hidden = true; $('#login-view').hidden = false; }
+  async function authAction(kind) {
+    const email = $('#authEmail').value.trim(), password = $('#authPass').value, msg = $('#authMsg'); msg.className = 'auth-msg'; msg.textContent = '';
+    if (!email || password.length < 6) { msg.textContent = 'Email и пароль (от 6 символов)'; return; }
+    const { data, error } = kind === 'in' ? await sb.auth.signInWithPassword({ email, password }) : await sb.auth.signUp({ email, password });
+    if (error) { msg.textContent = error.message; return; }
+    if (!data.session) { msg.className = 'auth-msg ok'; msg.textContent = 'Подтвердите email по ссылке из письма и войдите'; return; }
+    user = data.session.user; mode = 'cloud'; startApp();
+  }
+  $('#btnLogin').addEventListener('click', () => authAction('in'));
+  $('#btnSignup').addEventListener('click', () => authAction('up'));
+  $('#authPass').addEventListener('keydown', e => { if (e.key === 'Enter') authAction('in'); });
+  $('#btnLocal').addEventListener('click', () => { mode = 'local'; user = null; startApp(); });
+  $('#logoutBtn').addEventListener('click', async () => {
+    if (mode !== 'cloud') return; await sb.auth.signOut(); user = null; mode = 'local';
+    Object.assign(S, { blocks: [], lists: [], tasks: [] }); showLogin();
+  });
+  (async function init() {
+    if (!cloudReady) { mode = 'local'; if (cfg.SUPABASE_URL && !window.supabase) setTimeout(() => toast('Supabase не загрузился — работаю локально'), 600); return startApp(); }
+    const { data } = await sb.auth.getSession();
+    if (data.session) { user = data.session.user; mode = 'cloud'; startApp(); } else showLogin();
+  })();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !$('#app').hidden) renderAll(); });
+})();
+
+</script>
 </body>
 </html>
